@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Конец близок</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1020;
+    --card:#071021;
+    --accent:#ff3b3b;
+    --accent-deep:#b30000;
+    --muted:#9fbfcf;
+    --pink:#ff76b6;
+    --black:#0b0b0b;
+    --checker-pink: #ff6aa6;
+    --checker-black: #0b0b0b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%; margin:0; background:linear-gradient(210deg,#e545eb 5%,#8e5dc7 33%, #19cfb1 85%,#9bdb70 100%); font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; color:#fff}
+  .stage{
+    min-height:100vh;
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .card {
+  width: 100%;
+  max-width: 960px;
+  background: linear-gradient(180deg, rgba(54, 54, 54, 0.62), rgba(20, 20, 20, 0.71));
+  border-radius: 18px;
+  padding: 28px;
+  display: flex;
+  gap: 1.5rem; 
+  align-items: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  position: relative;
+  z-index: 5;
+}
+
+  .timer-block {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1;
+  padding: 2.5rem 0;
+}
+  .time-segment{
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border-radius:14px;
+    padding:16px 20px;
+    min-width:92px;
+    text-align:center;
+    box-shadow: inset 0 -6px 18px rgba(0,0,0,0.35);
+  }
+  .time-value{
+    font-weight:800;
+    font-size:40px;
+    letter-spacing:1px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .colon{
+    font-weight:800;
+    font-size:40px;
+    margin:0 6px;
+    width:14px;
+    text-align:center;
+  }
+  .label{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .blink{
+    opacity:0.15;
+    transition:opacity 200ms linear;
+  }
+  .blink.on{ opacity:1 }
+
+  .btn-wrap {
+  width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-direction: column;
+}
+
+.btn-base {
+  width: 200px;
+  height: 220px;
+  background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 50%, #e5e7eb 70%, #f9fafb 100%);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 3px 6px rgba(255,255,255,0.7),
+    0 10px 30px rgba(0,0,0,0.4),
+    inset 0 -6px 12px rgba(0,0,0,0.15);
+  position: relative;
+  transform-origin: center;
+  z-index: 1;
+  cursor: default;
+  filter: drop-shadow(0 0 1px #fff);
+}
+
+.big-red {
+  width: 150px; /* Одинаковые ширина и высота */
+  height: 150px;
+  background: radial-gradient(circle, var(--accent) 0%, var(--accent-deep) 100%);
+  box-shadow: 
+    0 18px 45px rgba(179,0,0,0.6), 
+    inset 0 6px 18px rgba(255,255,255,0.12),
+    inset 0 0 20px rgba(255,59,59,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+  transform-origin: center;
+  user-select: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  transition: 
+    transform 0.2s ease,
+    filter 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.big-red:active {
+  transform: translate(-50%, -50%) translateY(2px) scale(0.995);
+}
+
+  .big-red.disabled{
+    filter:grayscale(.25) brightness(.85);
+    cursor:not-allowed;
+    opacity:0.85;
+  }
+
+  /* Modal */
+  .modal{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    background:rgba(2,4,8,0.6);
+    visibility:hidden;
+    opacity:0;
+    transition:opacity 240ms, visibility 240ms;
+  }
+  .modal.show{ visibility:visible; opacity:1 }
+  .modal-card{
+    background:linear-gradient(180deg,#0b1a20,#021017);
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.6);
+    max-width:420px;
+    text-align:center;
+    color:#fff;
+  }
+  .modal-card p{ margin:0 0 12px 0 }
+  .modal-card button{ background:var(--accent); border:none; padding:8px 14px; border-radius:8px; color:#121212; font-weight:700; cursor:pointer }
+
+  .checker-wrap{
+    position:fixed;
+    inset:0;
+    z-index:10;
+    pointer-events:none;
+    display:none;
+  }
+  .checker-wrap.on{ display:block; }
+
+  .checker-cell{
+    position:absolute;
+    width:var(--cell-size);
+    height:var(--cell-size);
+    background:var(--checker-black);
+    opacity:0;
+  }
+
+  /* words container */
+  .words-stage{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    gap:20px;
+    flex-direction:row;
+  }
+  .words-wrap{
+    display: grid;
+    grid-template-columns: 1fr; 
+    grid-template-rows: repeat(3, 100px);
+    pointer-events:auto;
+    transform: translateY(-82%);
+  }
+  .word{
+    width:calc(min(66vmin, 300px));
+    height:auto;
+    transform-origin:center;
+    display:block;
+    will-change:transform,opacity;
+    opacity:0;
+  }
+
+  /* small responsive tweaks */
+  @media (max-width:640px){
+    .card{ padding:18px; gap:12px; flex-direction:column; align-items:center}
+    .btn-wrap{ width:100% }
+    .btn-base{ width:150px; height: 150px; }
+    .big-red{ width:115px; height:115px; border-radius: 50%; font-size:18px }
+    .time-value{ font-size:32px }
+  }
+
+  /* Added emo image styles */
+  .emo-image {
+    position: fixed;
+    z-index: 25;
+    width: auto;
+    height: 55vh;
+    bottom: -55vh;
+    left: 50%;
+    margin-left: 13%;
+    transform: translateX(-50%);
+    will-change: transform;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="card" id="mainCard">
+      <div class="timer-block" id="timerBlock">
+        <div class="time-segment">
+          <div class="time-value"><span id="hT">00</span><span class="colon" id="c1">:</span><span id="mT">00</span><span class="colon" id="c2">:</span><span id="sT">00</span></div>
+        </div>
+
+        <div style="flex:1">
+        </div>
+      </div>
+
+      <div class="btn-wrap">
+        <div class="btn-base" id="btnBase"></div>
+        <div class="big-red disabled" id="bigBtn">beep</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- checkerboard -->
+  <div class="checker-wrap" id="checker"></div>
+
+  <!-- words stage (3 images) -->
+  <div class="words-stage" id="wordsStage" aria-hidden="true" style="display:none">
+    <div class="words-wrap" id="wordsWrap">
+      <!-- Replace src with your images: img/word1.png, img/word2.png, img/word3.png -->
+      <img class="word" id="word1" src="img/word1.png" alt="word1 placeholder">
+      <img class="word" id="word2" src="img/word2.png" alt="word2 placeholder">
+      <img class="word" id="word3" src="img/word3.png" alt="word3 placeholder">
+    </div>
+  </div>
+
+  <!-- Added emo image -->
+  <img class="emo-image" id="emoImage" src="img/emo-emo.png" alt="emo" style="display: none;">
+
+  <audio id="bgAudio" loop src="audio/music.mp3"></audio>
+
+
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <p id="modalText">Подожди!</p>
+      <button id="modalClose">Жду🙃</button>
+    </div>
+  </div>
+
+
+  <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+
+<script>
+
+const MOSCOW_UTC_OFFSET_HOURS = 3;
+const targetUtcMs = Date.UTC(2024, 7, 10, 10, 15, 0) - (MOSCOW_UTC_OFFSET_HOURS * 3600 * 1000);
+const jokes = [
+  "30 лет, а терпения как у ребенка",
+  "Терпение, иди поиграй в мужиков",
+  "Падажи блдждь",
+  "Хватит тыкать, Даву позову:D",
+];
+
+const hT = document.getElementById('hT');
+const mT = document.getElementById('mT');
+const sT = document.getElementById('sT');
+const c1 = document.getElementById('c1');
+const c2 = document.getElementById('c2');
+const bigBtn = document.getElementById('bigBtn');
+const modal = document.getElementById('modal');
+const modalText = document.getElementById('modalText');
+const modalClose = document.getElementById('modalClose');
+const checker = document.getElementById('checker');
+const wordsStage = document.getElementById('wordsStage');
+const wordsWrap = document.getElementById('wordsWrap');
+const wordEls = [document.getElementById('word1'), document.getElementById('word2'), document.getElementById('word3')];
+const audio = document.getElementById('bgAudio');
+const timerBlock = document.getElementById('timerBlock');
+const btnBase = document.getElementById('btnBase');
+const mainCard = document.getElementById('mainCard');
+const emoImage = document.getElementById('emoImage');
+
+function nowUtcMsFromDevice() {
+  return Date.now() + (new Date().getTimezoneOffset() * 60000);
+}
+
+function msUntilTarget() {
+  const nowUtc = nowUtcMsFromDevice();
+  return targetUtcMs - nowUtc;
+}
+
+let timerInterval = null;
+let timerEnded = false;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function updateTimerDisplay(ms) {
+  if (ms <= 0) {
+    hT.textContent = '00';
+    mT.textContent = '00';
+    sT.textContent = '00';
+    c1.classList.add('blink','on');
+    c2.classList.add('blink','on');
+    return;
+  }
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  hT.textContent = pad(hours);
+  mT.textContent = pad(minutes);
+  sT.textContent = pad(seconds);
+}
+
+function startTimerLoop() {
+  const ms = msUntilTarget();
+  if (ms <= 0) {
+    onTimerFinished();
+  } else {
+    updateTimerDisplay(ms);
+  }
+  timerInterval = setInterval(()=>{
+    const msNow = msUntilTarget();
+    if (msNow <= 0 && !timerEnded) {
+      clearInterval(timerInterval);
+      onTimerFinished();
+    } else {
+      updateTimerDisplay(msNow);
+    }
+  }, 250);
+}
+
+function onTimerFinished(){
+  timerEnded = true;
+  hT.textContent = '00'; mT.textContent = '00'; sT.textContent = '00';
+  c1.classList.add('blink');
+  c2.classList.add('blink');
+  let blinkState = true;
+  const blinkInt = setInterval(()=>{
+    blinkState = !blinkState;
+    if (blinkState) {
+      c1.classList.add('on'); c2.classList.add('on');
+    } else {
+      c1.classList.remove('on'); c2.classList.remove('on');
+    }
+  }, 500);
+  bigBtn.classList.remove('disabled');
+  bigBtn.dataset.enabled = 'true';
+  bigBtn.dataset.blinkInterval = blinkInt;
+}
+
+function showModalRandom(){
+  const text = jokes[Math.floor(Math.random()*jokes.length)];
+  modalText.textContent = text;
+  modal.classList.add('show');
+}
+modalClose.addEventListener('click',()=> modal.classList.remove('show'));
+
+bigBtn.addEventListener('click', async () => {
+  const enabled = bigBtn.dataset.enabled === 'true';
+  if (!enabled) {
+    showModalRandom();
+    return;
+  }
+  bigBtn.dataset.enabled = 'processing';
+
+  if (bigBtn.dataset.blinkInterval) {
+    clearInterval(Number(bigBtn.dataset.blinkInterval));
+    c1.classList.remove('on'); c2.classList.remove('on');
+  }
+
+  runShowSequence();
+});
+
+
+function runShowSequence(){
+  const rectBtn = bigBtn.getBoundingClientRect();
+  const rectBase = btnBase.getBoundingClientRect();
+  const cloneTop = bigBtn.cloneNode(true);
+  const cloneBase = btnBase.cloneNode(true);
+  document.body.appendChild(cloneTop);
+  document.body.appendChild(cloneBase);
+  cloneTop.style.position = cloneBase.style.position = 'fixed';
+  cloneTop.style.left = rectBtn.left + 'px';
+  cloneTop.style.top = rectBtn.top + 'px';
+  cloneTop.style.margin = 0;
+  cloneTop.style.zIndex = 40;
+  cloneTop.id = 'cloneTop';
+  cloneBase.style.left = rectBase.left + 'px';
+  cloneBase.style.top = rectBase.top + 'px';
+  cloneBase.style.width = rectBase.width + 'px';
+  cloneBase.style.height = rectBase.height + 'px';
+  cloneBase.style.margin = 0;
+  cloneBase.style.zIndex = 39;
+  cloneBase.id = 'cloneBase';
+
+  bigBtn.style.visibility = 'hidden';
+  btnBase.style.visibility = 'hidden';
+
+  checker.innerHTML = ''; // clean
+  checker.style.setProperty('--cell-size', '60px');
+
+  const tl = gsap.timeline();
+
+
+  tl.to(timerBlock, {duration: 0.5, rotation: 720, x: window.innerWidth, y: -200, ease: "power3.in"}, 0);
+  // also lift main card for depth
+  tl.to(mainCard, {duration:0.5, y:-40, ease:"power2.out"}, 0);
+
+  // break apart button clones
+  // cloneTop "cap" flies left-up, cloneBase flies right-down
+  tl.to(cloneTop, {duration:0.5, rotation: 720, x: -window.innerWidth*0.8, y: -window.innerHeight*0.6, ease:"power4.in"}, 0.05);
+  tl.to(cloneBase, {duration:0.5, rotation: -360, x: window.innerWidth*0.8, y: window.innerHeight*0.6, ease:"power4.in"}, 0.05);
+
+  // after they flew away, start drawing checkerboard
+  tl.add(() => {
+    // make checker visible
+    checker.classList.add('on');
+    generateCheckerboardAndAnimate(60, 0.04, tl); // cellSize px, delayPerCell s, pass timeline to continue
+  }, 0.95);
+
+}
+
+function generateCheckerboardAndAnimate(cellSizePx, delayPerCellSec, hostTimeline) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const cols = Math.ceil(w / cellSizePx);
+  const rows = Math.ceil(h / cellSizePx);
+  const total = cols * rows;
+
+  checker.style.setProperty('--cell-size', cellSizePx + 'px');
+
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'checker-cell';
+      const isPink = ((r + c) % 2 === 0);
+      cell.style.background = isPink ? 'var(--checker-pink)' : 'var(--checker-black)';
+      cell.style.width = cell.style.height = cellSizePx + 'px';
+      cell.style.left = (c * cellSizePx) + 'px';
+      cell.style.top = (r * cellSizePx) + 'px';
+      cell.style.opacity = 0;
+      cell.style.zIndex = 11;
+      checker.appendChild(cell);
+      cells.push(cell);
+    }
+  }
+
+
+  const totalDuration = total * delayPerCellSec;
+  
+  hostTimeline.to(cells, {
+    duration: 0.05,
+    opacity: 1,
+    ease: "none",
+    stagger: {
+      each: delayPerCellSec,
+      from: 0 
+    }
+  }, ">");
+
+  hostTimeline.add(() => {
+    wordsStage.style.display = 'flex';
+    wordEls.forEach(el=>{
+      el.style.opacity = 0;
+      el.style.transform = 'scale(1.4)';
+    });
+    animateWordsSequence(hostTimeline);
+  }, "+=" + (total * delayPerCellSec * 0.2));
+}
+
+function animateWordsSequence(hostTimeline) {
+  const t = gsap.timeline();
+
+  function animateOne(el) {
+    const tl = gsap.timeline();
+    tl.to(el, {duration:0.28, opacity:1, scale:1.15, ease:"back.out(1.4)"});
+    tl.to(el, {duration:0.32, scale:1.28, ease:"power1.inOut", repeat:2, yoyo:true});
+    tl.to(el, {duration:0.3, scale:1, ease:"elastic.out(1, 0.6)"});
+    return tl;
+  }
+
+  t.add(animateOne(wordEls[0]));
+  t.add(animateOne(wordEls[1]), "+=0.07");
+  t.add(animateOne(wordEls[2]), "+=0.07");
+
+  t.add(() => {
+    try { 
+      audio.play().then(() => {
+        emoImage.style.display = 'block';
+        gsap.to(emoImage, {
+          duration: 8,
+          y: '-54.5vh',
+          ease: "back.out(1.7)"
+        });
+      }).catch(()=>{/* ignore */}); 
+    } catch(e){}
+    startHeartbeat();
+  });
+
+  hostTimeline.add(t, ">");
+}
+
+function startHeartbeat(){
+  wordsStage.style.pointerEvents = 'auto';
+  gsap.to(wordsWrap, {
+    scale: 1.4,
+    duration: 0.55,
+    ease: "power1.inOut",
+    yoyo:true,
+    repeat: -1
+  });
+  gsap.to(wordEls, {
+    opacity: 0.98,
+    duration: 1.2,
+    yoyo:true,
+    repeat:-1,
+    stagger: 0.08,
+    ease: "sine.inOut"
+  });
+}
+
+
+let resizeTimeout = null;
+window.addEventListener('resize', ()=> {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(()=>{ /* optionally adjust cell sizes or layout */ }, 350);
+});
+
+
+
+
+startTimerLoop();
+
+</script>
+</body>
+</html>
